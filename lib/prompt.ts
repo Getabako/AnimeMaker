@@ -76,7 +76,7 @@ export type AnimationParams = {
   motionPrompt: string;
   framesBefore: number; // 既定 3
   framesAfter: number;  // 既定 3
-  motionStrength: "subtle" | "small" | "medium";
+  motionStrength: "weak" | "medium" | "strong";
   backgroundColor?: string;
   size?: string;
 };
@@ -105,7 +105,7 @@ ${SCENE_RULES}
 
 # 動作指示
 ユーザー入力: 「${p.motionPrompt}」
-動きの強さ: **${p.motionStrength}** (フレーム間の差分は控えめに、ただし「ほぼ動いてない」は NG)
+動きの強さ: **${p.motionStrength}** (${strengthGuide(p.motionStrength)})
 
 # フレーム別の役割
 中心フレーム \`frame_000.png\` を参照画像に最も近い基準姿勢とし、
@@ -160,6 +160,12 @@ function frameRole(i: number): string {
     return `動作に入る ${-i} ステップ前。基準姿勢から少し戻った準備姿勢。体全体がわずかに引き戻る。`;
   }
   return `動作の余韻 ${i} ステップ後。基準姿勢から動作が少し進んで自然に収束する状態。`;
+}
+
+function strengthGuide(s: "weak" | "medium" | "strong"): string {
+  if (s === "weak") return "フレーム間は very subtle に。ただし完全に止まっては NG。";
+  if (s === "strong") return "フレーム間にはっきり視認できる動きを付ける。ただしキャラ破綻は禁止。";
+  return "フレーム間の差分は控えめに。ただし「ほぼ動いてない」は NG。";
 }
 
 function escape(s: string): string {

@@ -24,7 +24,7 @@ export default function Home() {
   const [size, setSize] = useState("1024x1024");
   const [framesBefore, setFramesBefore] = useState(3);
   const [framesAfter, setFramesAfter] = useState(3);
-  const [motionStrength, setMotionStrength] = useState<"subtle" | "small" | "medium">("small");
+  const [motionStrength, setMotionStrength] = useState<"weak" | "medium" | "strong">("medium");
 
   const [saveRoot, setSaveRoot] = useState("");
   const [defaultSaveRoot, setDefaultSaveRoot] = useState("");
@@ -265,11 +265,11 @@ export default function Home() {
               <label className="dq-label">▼ ウゴキ ノ ツヨサ</label>
               <select
                 value={motionStrength}
-                onChange={(e) => setMotionStrength(e.target.value as "subtle" | "small" | "medium")}
+                onChange={(e) => setMotionStrength(e.target.value as "weak" | "medium" | "strong")}
               >
-                <option value="subtle">subtle</option>
-                <option value="small">small</option>
-                <option value="medium">medium</option>
+                <option value="weak">ヨワ</option>
+                <option value="medium">チュウ</option>
+                <option value="strong">ツヨ</option>
               </select>
             </div>
           </div>

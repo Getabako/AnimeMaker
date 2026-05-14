@@ -15,9 +15,9 @@ export async function POST(req: NextRequest) {
   const motionPrompt = String(form.get("motionPrompt") ?? "").trim();
   const framesBefore = clamp(parseInt(String(form.get("framesBefore") ?? "3"), 10), 0, 6, 3);
   const framesAfter = clamp(parseInt(String(form.get("framesAfter") ?? "3"), 10), 0, 6, 3);
-  const motionStrength = (["subtle", "small", "medium"].includes(String(form.get("motionStrength")))
+  const motionStrength = (["weak", "medium", "strong"].includes(String(form.get("motionStrength")))
     ? String(form.get("motionStrength"))
-    : "small") as "subtle" | "small" | "medium";
+    : "medium") as "weak" | "medium" | "strong";
   const backgroundColor = String(form.get("backgroundColor") ?? "").trim() || undefined;
   const size = String(form.get("size") ?? "1024x1024");
   const saveRoot = resolveSaveRoot(String(form.get("saveRoot") ?? ""));
