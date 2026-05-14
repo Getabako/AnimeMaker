@@ -51,9 +51,6 @@ export default function Home() {
       return next;
     });
 
-  // File System Access API でフォルダ選択 (Chromium のみ)。
-  // 取得した DirectoryHandle 自体はサーバーに渡せないので、
-  // 名前ヒントを表示しつつ、ユーザーに絶対パスを確認してもらう。
   const pickFolder = async () => {
     // @ts-expect-error: showDirectoryPicker
     if (typeof window.showDirectoryPicker !== "function") {
@@ -63,7 +60,7 @@ export default function Home() {
     try {
       // @ts-expect-error: showDirectoryPicker
       const handle = await window.showDirectoryPicker({ mode: "readwrite" });
-      append("info", `選択フォルダ名: ${handle.name} (絶対パスはブラウザから取得できません。下の欄に確認入力してください)`);
+      append("info", `センタク フォルダ メイ: ${handle.name} (ブラウザ ノ シヨウ ジョウ ゼッタイ パス ハ シュトク デキマセン。シタ ノ ラン ニ ニュウリョク シテクダサイ)`);
     } catch {
       // user cancelled
     }
@@ -76,20 +73,20 @@ export default function Home() {
       body: JSON.stringify({ path: saveRoot }),
     });
     if (!r.ok) {
-      append("error", await r.text());
+      append("err", await r.text());
       return false;
     }
     const j = await r.json();
     setSaveRoot(j.saveRoot);
     localStorage.setItem(LS_SAVE_ROOT, j.saveRoot);
-    append("info", `保存先 OK: ${j.saveRoot}`);
+    append("info", `ホゾンサキ OK: ${j.saveRoot}`);
     return true;
   };
 
   const start = async () => {
-    if (!image) return append("error", "画像を選択してください");
-    if (!prompt.trim()) return append("error", "指示テキストを入力してください");
-    if (!saveRoot.trim()) return append("error", "保存先フォルダを指定してください");
+    if (!image) return append("err", "ガゾウ ヲ センタク シテクダサイ");
+    if (!prompt.trim()) return append("err", "シジ テキスト ヲ ニュウリョク シテクダサイ");
+    if (!saveRoot.trim()) return append("err", "ホゾンサキ フォルダ ヲ シテイ シテクダサイ");
 
     setBusy(true);
     setLogs([]);
@@ -109,10 +106,10 @@ export default function Home() {
       fd.append("motionStrength", motionStrength);
     }
 
-    append("info", `▶ Codex に ${mode === "pose" ? "ポーズ" : "アニメ"} 生成を依頼…`);
+    append("info", `▶ Codex ニ ${mode === "pose" ? "ポーズ" : "アニメ"} セイセイ ヲ イライ...`);
     const res = await fetch(`/api/${mode}`, { method: "POST", body: fd });
     if (!res.body) {
-      append("error", "通信失敗");
+      append("err", "ツウシン シッパイ");
       setBusy(false);
       return;
     }
@@ -144,7 +141,7 @@ export default function Home() {
     switch (ev) {
       case "init":
         append("info", `job: ${String(data.id)}`);
-        if (data.savedTo) append("info", `保存先: ${String(data.savedTo)}`);
+        if (data.savedTo) append("info", `ホゾンサキ: ${String(data.savedTo)}`);
         return;
       case "step":
         append(String(data.kind ?? "info"), String(data.text ?? ""));
@@ -164,33 +161,32 @@ export default function Home() {
         append("err", String(data.message ?? "error"));
         return;
       case "done":
-        append("done", "★ 完成");
+        append("done", "★ カンセイ");
         setResult(data as unknown as Result);
         return;
     }
   };
 
   return (
-    <main className="max-w-3xl mx-auto p-6 grid gap-6">
+    <main className="max-w-4xl mx-auto px-8 py-16 grid gap-12">
       <header className="dq-frame">
-        <h1 className="text-base mb-2">* ANIMEMAKER *</h1>
-        <p className="text-[10px] opacity-80">
+        <h1 className="text-2xl mb-4">* ANIMEMAKER *</h1>
+        <p className="text-sm opacity-80">
           キャラクター ガゾウ カラ ゲーム ソザイ ヲ セイセイ
         </p>
       </header>
 
-      {/* 保存先 */}
       <section className="dq-frame">
-        <h2 className="text-xs mb-3">▼ ホゾンサキ フォルダ</h2>
+        <h2 className="dq-label">▼ ホゾンサキ フォルダ</h2>
         <input
           type="text"
           placeholder={defaultSaveRoot}
           value={saveRoot}
           onChange={(e) => setSaveRoot(e.target.value)}
         />
-        <div className="flex gap-2 mt-3 flex-wrap">
+        <div className="flex gap-5 mt-8 flex-wrap">
           <button className="dq-btn" onClick={pickFolder} type="button">フォルダ センタク</button>
-          <button className="dq-btn" onClick={persistSaveRoot} type="button">パス カクニン / サクセイ</button>
+          <button className="dq-btn" onClick={persistSaveRoot} type="button">パス カクニン</button>
           <button
             className="dq-btn"
             onClick={() => setSaveRoot(defaultSaveRoot)}
@@ -199,47 +195,42 @@ export default function Home() {
             デスクトップ ニ モドス
           </button>
         </div>
-        <p className="text-[10px] opacity-70 mt-3">
-          シテイ シタ フォルダ ノ ナカ ニ ジョブゴト ノ サブフォルダ ガ ジドウ サクセイ サレマス。
+        <p className="dq-hint">
+          シテイ シタ フォルダ ノ ナカ ニ ジョブ ゴト ノ サブフォルダ ガ ジドウ サクセイ サレマス
         </p>
       </section>
 
-      {/* 入力 */}
-      <section className="dq-frame grid gap-3">
+      <section className="dq-frame grid gap-8">
         <div>
-          <label className="text-xs">▼ モード</label>
+          <label className="dq-label">▼ モード</label>
           <select value={mode} onChange={(e) => setMode(e.target.value as Mode)}>
             <option value="pose">ポーズ サクセイ モード</option>
-            <option value="animation">アニメーション モード (ゼンゴ 3フレーム ケイ 7マイ)</option>
+            <option value="animation">アニメーション モード (ゼンゴ 3 フレーム ケイ 7 マイ)</option>
           </select>
         </div>
 
         <div>
-          <label className="text-xs">▼ キジュン キャラクター ガゾウ</label>
+          <label className="dq-label">▼ キジュン キャラクター ガゾウ</label>
           <input type="file" accept="image/*" onChange={(e) => setImage(e.target.files?.[0] ?? null)} />
         </div>
 
         <div>
-          <label className="text-xs">▼ シジ テキスト</label>
+          <label className="dq-label">▼ シジ テキスト</label>
           <textarea
-            rows={3}
-            placeholder={
-              mode === "pose"
-                ? "レイ: コウゲキマエ ノ カマエ"
-                : "レイ: ケン ヲ フリオロス ドウサ"
-            }
+            rows={4}
+            placeholder={mode === "pose" ? "レイ: コウゲキ マエ ノ カマエ" : "レイ: ケン ヲ フリオロス ドウサ"}
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
           <div>
-            <label className="text-xs">▼ ハイケイショク (#FF00FF)</label>
+            <label className="dq-label">▼ ハイケイショク (#FF00FF)</label>
             <input value={bg} placeholder="ジドウ" onChange={(e) => setBg(e.target.value)} />
           </div>
           <div>
-            <label className="text-xs">▼ シュツリョク サイズ</label>
+            <label className="dq-label">▼ シュツリョク サイズ</label>
             <select value={size} onChange={(e) => setSize(e.target.value)}>
               <option>1024x1024</option>
               <option>1024x1536</option>
@@ -249,9 +240,9 @@ export default function Home() {
         </div>
 
         {mode === "animation" && (
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
             <div>
-              <label className="text-xs">▼ マエ フレーム</label>
+              <label className="dq-label">▼ マエ フレーム</label>
               <input
                 type="number"
                 min={0}
@@ -261,7 +252,7 @@ export default function Home() {
               />
             </div>
             <div>
-              <label className="text-xs">▼ アト フレーム</label>
+              <label className="dq-label">▼ アト フレーム</label>
               <input
                 type="number"
                 min={0}
@@ -271,7 +262,7 @@ export default function Home() {
               />
             </div>
             <div>
-              <label className="text-xs">▼ ウゴキ ノ ツヨサ</label>
+              <label className="dq-label">▼ ウゴキ ノ ツヨサ</label>
               <select
                 value={motionStrength}
                 onChange={(e) => setMotionStrength(e.target.value as "subtle" | "small" | "medium")}
@@ -284,7 +275,7 @@ export default function Home() {
           </div>
         )}
 
-        <div className="mt-2">
+        <div className="mt-4">
           <button className="dq-btn" onClick={start} disabled={busy}>
             {busy ? "セイセイ チュウ..." : "セイセイ スル"}
           </button>
@@ -293,11 +284,11 @@ export default function Home() {
 
       {(logs.length > 0 || busy) && (
         <section className="dq-frame">
-          <h2 className="text-xs mb-2">▼ シンチョク</h2>
+          <h2 className="dq-label">▼ シンチョク</h2>
           <div className="dq-log">
             {logs.map((l, i) => (
               <div key={i} className={kindClass(l.kind)}>
-                <span className="opacity-60 mr-2">[{l.kind}]</span>
+                <span className="opacity-60 mr-3">[{l.kind}]</span>
                 {l.text}
               </div>
             ))}
@@ -308,22 +299,20 @@ export default function Home() {
 
       {result && (
         <section className="dq-frame">
-          <h2 className="text-xs mb-3">▼ ケッカ</h2>
-          <p className="text-[10px] opacity-80 mb-3">
-            ホゾンサキ: {result.savedTo}
-          </p>
+          <h2 className="dq-label">▼ ケッカ</h2>
+          <p className="dq-hint mb-6">ホゾンサキ: {result.savedTo}</p>
           {result.mode === "pose" ? (
-            <div className="dq-cell">
+            <div className="dq-cell max-w-md">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={result.imageUrl} alt="pose" />
               <a href={result.imageUrl} download>PNG ダウンロード</a>
             </div>
           ) : (
             <>
-              <p className="mb-3">
+              <p className="mb-6">
                 <a href={result.zipUrl} download>ZIP ダウンロード (レンバン + manifest)</a>
               </p>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-6">
                 {result.frames
                   .slice()
                   .sort((a, b) => a.index - b.index)
