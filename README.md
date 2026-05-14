@@ -44,10 +44,13 @@ npm run dev        # http://localhost:3000
 
 ## 出力先
 
-ジョブ成果物は `~/.animemaker-data/jobs/<jobId>/` に保存されます (環境変数 `ANIMEMAKER_DATA_ROOT` で変更可)。
+UI 上部の「ホゾンサキ フォルダ」欄で **保存先を自由に指定** できます (絶対パス)。
+既定値は `~/Desktop/AnimeMaker`。
+「フォルダ センタク」ボタン (Chromium のみ) でフォルダ選択ダイアログも開けます。
+指定したフォルダの中に、ジョブごとのサブフォルダが自動作成されます。
 
 ```
-~/.animemaker-data/jobs/pose-20260514-1830-ab12/
+<指定フォルダ>/pose-20260514-1830-ab12/
   reference.png      # アップロードした基準画像
   prompt.txt         # Codex に渡した指示プロンプト
   pose.png           # 生成画像
@@ -55,7 +58,7 @@ npm run dev        # http://localhost:3000
 ```
 
 ```
-~/.animemaker-data/jobs/anim-20260514-1830-cd34/
+<指定フォルダ>/anim-20260514-1830-cd34/
   reference.png
   prompt.txt
   frame_-3.png ... frame_+3.png

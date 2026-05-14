@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { NextRequest } from "next/server";
-import { paths, ensureDir, newId } from "@/lib/paths";
+import { resolveSaveRoot, jobDirUnder, ensureDir, newId } from "@/lib/paths";
 import { buildPoseCodexPrompt } from "@/lib/prompt";
 import { runJobStream, saveReferenceImage } from "@/lib/runJob";
 
@@ -14,12 +14,13 @@ export async function POST(req: NextRequest) {
   const posePrompt = String(form.get("posePrompt") ?? "").trim();
   const backgroundColor = String(form.get("backgroundColor") ?? "").trim() || undefined;
   const size = String(form.get("size") ?? "1024x1024");
+  const saveRoot = resolveSaveRoot(String(form.get("saveRoot") ?? ""));
 
   if (!(image instanceof File)) return new Response("image is required", { status: 400 });
   if (!posePrompt) return new Response("posePrompt is required", { status: 400 });
 
   const id = newId("pose");
-  const cwd = paths.jobDir(id);
+  const cwd = jobDirUnder(saveRoot, id);
   ensureDir(cwd);
   await saveReferenceImage(image, cwd);
 
@@ -31,16 +32,15 @@ export async function POST(req: NextRequest) {
     prompt,
     serviceName: "animemaker-pose",
     req,
-    initData: { id, mode: "pose" },
+    initData: { id, mode: "pose", savedTo: cwd },
     finalize: () => {
       const out = path.join(cwd, "pose.png");
-      if (!fs.existsSync(out)) {
-        throw new Error("pose.png が生成されませんでした");
-      }
+      if (!fs.existsSync(out)) throw new Error("pose.png が生成されませんでした");
       return {
         id,
         mode: "pose",
-        imageUrl: `/api/jobs/${id}/pose.png`,
+        savedTo: cwd,
+        imageUrl: `/api/jobs/file?dir=${encodeURIComponent(cwd)}&file=pose.png`,
       };
     },
   });
