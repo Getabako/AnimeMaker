@@ -138,6 +138,21 @@ a:hover { color: #fff; }
   background: #222;
 }
 
+/* 検証ステータス表示 */
+.dq-status {
+  margin-top: 16px;
+  padding: 12px 16px;
+  border: 3px solid #fff;
+  font-size: 13px;
+  line-height: 1.7;
+  letter-spacing: 0.08em;
+  background: #000;
+  word-break: break-all;
+}
+.dq-status.ok      { border-color: #6cff6c; color: #6cff6c; }
+.dq-status.ng      { border-color: #ff6464; color: #ff6464; }
+.dq-status.unknown { border-color: #888;    color: #aaa; }
+
 /* 補助テキスト */
 .dq-hint {
   font-size: 12px;

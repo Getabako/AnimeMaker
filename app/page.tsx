@@ -28,6 +28,8 @@ export default function Home() {
 
   const [saveRoot, setSaveRoot] = useState("");
   const [defaultSaveRoot, setDefaultSaveRoot] = useState("");
+  const [saveRootStatus, setSaveRootStatus] = useState<"unknown" | "ok" | "ng">("unknown");
+  const [saveRootMsg, setSaveRootMsg] = useState("");
 
   const [busy, setBusy] = useState(false);
   const [logs, setLogs] = useState<Log[]>([]);
@@ -40,9 +42,50 @@ export default function Home() {
       const j = await r.json();
       setDefaultSaveRoot(j.defaultSaveRoot);
       const saved = typeof localStorage !== "undefined" ? localStorage.getItem(LS_SAVE_ROOT) : null;
-      setSaveRoot(saved || j.defaultSaveRoot);
+      const initial = saved || j.defaultSaveRoot;
+      setSaveRoot(initial);
+      void validateSaveRoot(initial);
     })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // パス変更時に自動で検証（デバウンス）。
+  useEffect(() => {
+    if (!saveRoot) return;
+    setSaveRootStatus("unknown");
+    const t = setTimeout(() => { void validateSaveRoot(saveRoot); }, 400);
+    return () => clearTimeout(t);
+  }, [saveRoot]);
+
+  const validateSaveRoot = async (p: string) => {
+    if (!p.trim()) {
+      setSaveRootStatus("ng");
+      setSaveRootMsg("パスが空です");
+      return false;
+    }
+    try {
+      const r = await fetch("/api/save-root", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ path: p }),
+      });
+      if (!r.ok) {
+        setSaveRootStatus("ng");
+        setSaveRootMsg(await r.text());
+        return false;
+      }
+      const j = await r.json();
+      setSaveRoot(j.saveRoot);
+      localStorage.setItem(LS_SAVE_ROOT, j.saveRoot);
+      setSaveRootStatus("ok");
+      setSaveRootMsg(`OK: ${j.saveRoot}`);
+      return true;
+    } catch (e) {
+      setSaveRootStatus("ng");
+      setSaveRootMsg((e as Error).message);
+      return false;
+    }
+  };
 
   const append = (kind: string, text: string) =>
     setLogs((p) => {
@@ -51,36 +94,28 @@ export default function Home() {
       return next;
     });
 
+  // OS ネイティブのフォルダ選択ダイアログをサーバー経由で開く。
   const pickFolder = async () => {
-    // @ts-expect-error: showDirectoryPicker
-    if (typeof window.showDirectoryPicker !== "function") {
-      append("info", "このブラウザはフォルダ選択ダイアログ非対応です。パス欄に絶対パスを入力してください。");
-      return;
-    }
+    setSaveRootMsg("フォルダ センタク ダイアログ ヲ ヒョウジ チュウ...");
+    setSaveRootStatus("unknown");
     try {
-      // @ts-expect-error: showDirectoryPicker
-      const handle = await window.showDirectoryPicker({ mode: "readwrite" });
-      append("info", `センタク フォルダ メイ: ${handle.name} (ブラウザ ノ シヨウ ジョウ ゼッタイ パス ハ シュトク デキマセン。シタ ノ ラン ニ ニュウリョク シテクダサイ)`);
-    } catch {
-      // user cancelled
+      const r = await fetch("/api/pick-folder", { method: "POST" });
+      if (!r.ok) {
+        setSaveRootStatus("ng");
+        setSaveRootMsg(await r.text());
+        return;
+      }
+      const j = await r.json();
+      if (j.cancelled || !j.path) {
+        setSaveRootMsg("キャンセル サレマシタ");
+        return;
+      }
+      setSaveRoot(j.path);
+      await validateSaveRoot(j.path);
+    } catch (e) {
+      setSaveRootStatus("ng");
+      setSaveRootMsg((e as Error).message);
     }
-  };
-
-  const persistSaveRoot = async () => {
-    const r = await fetch("/api/save-root", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ path: saveRoot }),
-    });
-    if (!r.ok) {
-      append("err", await r.text());
-      return false;
-    }
-    const j = await r.json();
-    setSaveRoot(j.saveRoot);
-    localStorage.setItem(LS_SAVE_ROOT, j.saveRoot);
-    append("info", `ホゾンサキ OK: ${j.saveRoot}`);
-    return true;
   };
 
   const start = async () => {
@@ -184,9 +219,17 @@ export default function Home() {
           value={saveRoot}
           onChange={(e) => setSaveRoot(e.target.value)}
         />
+        <div
+          className={`dq-status ${saveRootStatus}`}
+          aria-live="polite"
+        >
+          {saveRootStatus === "ok" && "✓ "}
+          {saveRootStatus === "ng" && "✗ "}
+          {saveRootStatus === "unknown" && "… "}
+          {saveRootMsg || "ミカクニン"}
+        </div>
         <div className="flex gap-5 mt-8 flex-wrap">
           <button className="dq-btn" onClick={pickFolder} type="button">フォルダ センタク</button>
-          <button className="dq-btn" onClick={persistSaveRoot} type="button">パス カクニン</button>
           <button
             className="dq-btn"
             onClick={() => setSaveRoot(defaultSaveRoot)}
