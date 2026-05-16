@@ -18,6 +18,7 @@ export async function POST(req: NextRequest) {
   const motionStrength = (["weak", "medium", "strong"].includes(String(form.get("motionStrength")))
     ? String(form.get("motionStrength"))
     : "medium") as "weak" | "medium" | "strong";
+  const loop = String(form.get("loop") ?? "0") === "1";
   const backgroundColor = String(form.get("backgroundColor") ?? "").trim() || undefined;
   const size = String(form.get("size") ?? "1024x1024");
   const saveRoot = resolveSaveRoot(String(form.get("saveRoot") ?? ""));
@@ -35,6 +36,7 @@ export async function POST(req: NextRequest) {
     framesBefore,
     framesAfter,
     motionStrength,
+    loop,
     backgroundColor,
     size,
   });

@@ -75,6 +75,16 @@ h1, h2, h3 {
 
 .dq-frame input[type="number"] { padding-right: 8px !important; }
 
+/* ラジオ/チェックボックスは通常サイズに戻す */
+.dq-frame input[type="radio"],
+.dq-frame input[type="checkbox"] {
+  width: auto !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  accent-color: #fff;
+  flex: 0 0 auto;
+}
+
 /* ボタン */
 .dq-btn {
   background: #000;

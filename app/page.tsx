@@ -25,6 +25,7 @@ export default function Home() {
   const [framesBefore, setFramesBefore] = useState(3);
   const [framesAfter, setFramesAfter] = useState(3);
   const [motionStrength, setMotionStrength] = useState<"weak" | "medium" | "strong">("medium");
+  const [loop, setLoop] = useState(false);
 
   const [saveRoot, setSaveRoot] = useState("");
   const [defaultSaveRoot, setDefaultSaveRoot] = useState("");
@@ -139,6 +140,7 @@ export default function Home() {
       fd.append("framesBefore", String(framesBefore));
       fd.append("framesAfter", String(framesAfter));
       fd.append("motionStrength", motionStrength);
+      fd.append("loop", loop ? "1" : "0");
     }
 
     append("info", `▶ Codex ニ ${mode === "pose" ? "ポーズ" : "アニメ"} セイセイ ヲ イライ...`);
@@ -281,6 +283,32 @@ export default function Home() {
             </select>
           </div>
         </div>
+
+        {mode === "animation" && (
+          <div>
+            <label className="dq-label">▼ サイセイ ホウシキ</label>
+            <div className="flex gap-6 flex-wrap">
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="radio"
+                  name="loop"
+                  checked={!loop}
+                  onChange={() => setLoop(false)}
+                />
+                <span>タンパツ (コウゲキ / ジャンプ ナド)</span>
+              </label>
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="radio"
+                  name="loop"
+                  checked={loop}
+                  onChange={() => setLoop(true)}
+                />
+                <span>ループ (ホコウ / タイキ ナド ・ サイゴ ト サイショ ガ ツナガル)</span>
+              </label>
+            </div>
+          </div>
+        )}
 
         {mode === "animation" && (
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
