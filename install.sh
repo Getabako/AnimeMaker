@@ -11,7 +11,9 @@ set -e
 # --- 設定 ---------------------------------------------------------------
 GH_REPO="${ANIMEMAKER_REPO:-Getabako/AnimeMaker}"
 BRANCH="${ANIMEMAKER_BRANCH:-main}"
-INSTALL_DIR="${ANIMEMAKER_HOME:-$HOME/.animemaker}"
+# インストール先：デスクトップにわかりやすく置く。中身を開いて AI（codex / Claude）に
+# 直してもらえるよう、隠しフォルダではなくデスクトップの "AnimeMaker" フォルダにする。
+INSTALL_DIR="${ANIMEMAKER_HOME:-$HOME/Desktop/AnimeMaker}"
 # -----------------------------------------------------------------------
 
 cyan()  { printf "\033[36m%s\033[0m\n" "$*"; }
@@ -54,10 +56,25 @@ fi
 command -v git >/dev/null 2>&1 || brew install git
 
 # 6. リポジトリを取得 or 更新
+# 旧フォルダ ~/.animemaker からの移行（新しい場所が未作成なら引っ越し）
+OLD_DIR="$HOME/.animemaker"
+if [[ -z "${ANIMEMAKER_HOME:-}" && -d "$OLD_DIR/.git" && ! -d "$INSTALL_DIR/.git" ]]; then
+  cyan "▶ 旧フォルダ ~/.animemaker をデスクトップへ移動します"
+  mkdir -p "$(dirname "$INSTALL_DIR")"
+  mv "$OLD_DIR" "$INSTALL_DIR"
+fi
+
 if [[ -d "$INSTALL_DIR/.git" ]]; then
-  cyan "▶ 既存のアプリを最新版に更新します"
-  git -C "$INSTALL_DIR" fetch --quiet origin "$BRANCH"
-  git -C "$INSTALL_DIR" reset --quiet --hard "origin/$BRANCH"
+  # ローカルで修正している人（AI に直してもらった等）の変更を消さないように、
+  # 未コミットの修正がある場合は自動更新（reset --hard）をスキップして保持する。
+  if [[ -n "$(git -C "$INSTALL_DIR" status --porcelain 2>/dev/null)" ]]; then
+    cyan "▶ あなたの修正を保持したまま起動します（自動更新はスキップ）"
+    cyan "  最新版に戻したい時は: cd \"$INSTALL_DIR\" && git reset --hard origin/$BRANCH"
+  else
+    cyan "▶ 既存のアプリを最新版に更新します"
+    git -C "$INSTALL_DIR" fetch --quiet origin "$BRANCH"
+    git -C "$INSTALL_DIR" reset --quiet --hard "origin/$BRANCH"
+  fi
 else
   cyan "▶ アプリをダウンロードします → $INSTALL_DIR"
   rm -rf "$INSTALL_DIR"
@@ -77,6 +94,10 @@ NEED_BUILD=0
 [[ ! -d node_modules ]] && NEED_BUILD=1
 [[ ! -f .next/standalone/server.js ]] && NEED_BUILD=1
 [[ "$CUR_SHA" != "$LAST_SHA" ]] && NEED_BUILD=1
+# ローカルで直したソースがビルドより新しければ、その修正を反映するため再ビルド
+if [[ -f "$MARK_FILE" ]] && [[ -n "$(find app lib bin public next.config.ts package.json -newer "$MARK_FILE" 2>/dev/null || true)" ]]; then
+  NEED_BUILD=1
+fi
 
 if [[ "$NEED_BUILD" -eq 1 ]]; then
   cyan "▶ アプリを準備中（初回 or 更新があった時のみ・30 秒〜1 分）"
